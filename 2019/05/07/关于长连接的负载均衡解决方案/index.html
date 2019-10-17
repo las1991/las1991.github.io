@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+  <meta name="google-site-verification" content="fPEHdKiF0k_LN8ZQKKNoH9k8fP7oQYvy0EfJyY0PEFc">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/jcodec.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/jcodec.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/jcodec.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/jcodec.png?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="最近公司培训，讲到了有关于长连接的负载均衡解决方案，确有体会，故此记录一下。在之前做负载均衡一般针对的是短连接，短连接的场景在实际应用中非常普遍。浏览器中大部分的请求都是短连接，例如用户登录，注册。商城的订单，付款等功能都属于短连接。短连接的特点就是无状态，连接时间短，长则三四秒，短则几毫秒。短连接的负载均衡很容易解决，开源中间件也比较多,例如nginx，F5等。而长连接的负载均衡解决方案则比较少">
+<meta name="keywords" content="负载均衡">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关于长连接的负载均衡解决方案">
+<meta property="og:url" content="https://blog.f-fox.com/2019/05/07/关于长连接的负载均衡解决方案/index.html">
+<meta property="og:site_name" content="las1991">
+<meta property="og:description" content="最近公司培训，讲到了有关于长连接的负载均衡解决方案，确有体会，故此记录一下。在之前做负载均衡一般针对的是短连接，短连接的场景在实际应用中非常普遍。浏览器中大部分的请求都是短连接，例如用户登录，注册。商城的订单，付款等功能都属于短连接。短连接的特点就是无状态，连接时间短，长则三四秒，短则几毫秒。短连接的负载均衡很容易解决，开源中间件也比较多,例如nginx，F5等。而长连接的负载均衡解决方案则比较少">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://blog.f-fox.com/2019/05/07/关于长连接的负载均衡解决方案/clj1.png">
+<meta property="og:image" content="https://blog.f-fox.com/2019/05/07/关于长连接的负载均衡解决方案/clj2.png">
+<meta property="og:image" content="https://blog.f-fox.com/2019/05/07/关于长连接的负载均衡解决方案/clj3.png">
+<meta property="og:updated_time" content="2019-09-25T06:22:02.912Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="关于长连接的负载均衡解决方案">
+<meta name="twitter:description" content="最近公司培训，讲到了有关于长连接的负载均衡解决方案，确有体会，故此记录一下。在之前做负载均衡一般针对的是短连接，短连接的场景在实际应用中非常普遍。浏览器中大部分的请求都是短连接，例如用户登录，注册。商城的订单，付款等功能都属于短连接。短连接的特点就是无状态，连接时间短，长则三四秒，短则几毫秒。短连接的负载均衡很容易解决，开源中间件也比较多,例如nginx，F5等。而长连接的负载均衡解决方案则比较少">
+<meta name="twitter:image" content="https://blog.f-fox.com/2019/05/07/关于长连接的负载均衡解决方案/clj1.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://blog.f-fox.com/2019/05/07/关于长连接的负载均衡解决方案/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>关于长连接的负载均衡解决方案 | las1991</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">las1991</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.f-fox.com/2019/05/07/关于长连接的负载均衡解决方案/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="las">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/jcodec.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="las1991">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">关于长连接的负载均衡解决方案
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-05-07 21:42:41" itemprop="dateCreated datePublished" datetime="2019-05-07T21:42:41+08:00">2019-05-07</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-09-25 14:22:02" itemprop="dateModified" datetime="2019-09-25T14:22:02+08:00">2019-09-25</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+            <span id="/2019/05/07/关于长连接的负载均衡解决方案/" class="leancloud_visitors" data-flag-title="关于长连接的负载均衡解决方案">
+              <span class="post-meta-divider">|</span>
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读次数：</span>
+              
+                <span class="leancloud-visitors-count"></span>
+            </span>
+          
+
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">本文字数：</span>
+                
+                <span title="本文字数">5.4k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">10 分钟</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>最近公司培训，讲到了有关于长连接的负载均衡解决方案，确有体会，故此记录一下。在之前做负载均衡一般针对的是短连接，短连接的场景在实际应用中非常普遍。浏览器中大部分的请求都是短连接，例如用户登录，注册。商城的订单，付款等功能都属于短连接。短连接的特点就是无状态，连接时间短，长则三四秒，短则几毫秒。短连接的负载均衡很容易解决，开源中间件也比较多,例如nginx，F5等。而长连接的负载均衡解决方案则比较少了，主要原因是长连接相对于短连接来说应用面比较窄。一般是定制化需求会使用长连接。而生活中长连接作为普遍的应用就是直播系统了，近几年直播这种娱乐方式也越来越受到年轻人的喜爱，虎牙，斗鱼等直播平台如雨后春笋般涌现。我所在的公司主要从事安防行业，其中最为普遍的业务是摄像头的录像，在城市中每个街头，小区，公交地铁上的摄像头都会接入到公安体系中，其中录像不但能实时播放而且还会保存到服务器中，方便公安人员破案时可以随时查看录像。由于摄像机是24小时录像的，所以在这种场景下摄像机是使用长连接，而且一旦摄像机和某个服务器节点建立连接，就会长期和这个服务器保持着连接。一个城市的摄像头成千上万，后台不但需要考虑并发，还要考虑负载均衡。传统的负载均衡算法如轮询，哈希，随机等算法并不适用于长连接的一些业务场景。这里长连接可比作一个持续进行的任务，那么长连接的负载均衡就是每个任务的资源调度，最终使每个节点上的资源，均匀的分布在这些任务上。</p>
+<h2 id="长连接的特点"><a href="#长连接的特点" class="headerlink" title="长连接的特点"></a>长连接的特点</h2><p>由于业务场景不同，长连接的特点也不一样。不同的业务场景会有各种各样的特点，需要做定制化需求的开发，这里例举的摄像机长连接特点：</p>
+<ol>
+<li>每个长连接任务的时间长，短则几天，长则几个月。并且长期占用服务器的资源。</li>
+<li>每个长连接任务消耗的资源不一样。以摄像机为例，不同规格的摄像机像素不一样。有标清，高清，超清之分。对应的就是流量带宽的区别，有2M，4M，8M之分。因此每个长连接任务占用的资源大小不一样的。</li>
+<li>长连接任务启动时，初始化较慢，例如需要做认证，或是请求一些接口来获取数据。这样会导致做负载均衡时，并不能实时获取到节点的负载情况，出现几秒钟的延时。</li>
+</ol>
+<p>在这些特点下如何做负载均衡呢？短连接的负载均衡算法轮询，哈希，随机，平均负载。如果这些算法能不能直接应用于长连接的业务场景，会出现哪些问题呢？我们先从最简单的特点开始，逐渐递进的去思考这个问题，从无到有的推导出一个针对这些特点的负载均衡算法。上面三个特点以下简称特点一，特点二，特点三。</p>
+<h3 id="满足特点一，不考虑特点二，三"><a href="#满足特点一，不考虑特点二，三" class="headerlink" title="满足特点一，不考虑特点二，三"></a>满足特点一，不考虑特点二，三</h3><p>这种情景下长连接任务只是时间长，但每个长连接任务消耗资源大小一样，启动时无延时。这种场景是最为简单也是最理想的场景，在这种场景下轮询，哈希，随机算法都适用。因为每个任务大小一样，当任务数量够多时就能保证任务是平均分配到节点上的，从而保证了每个节点的负载基本一致，这些算法都能使服务器节点达到较为均匀的负载状态，这种情况根短连接的情况差不多，只是任务时间长一些。如下图<br><img src="/2019/05/07/关于长连接的负载均衡解决方案/clj1.png"></p>
+<h3 id="满足特点一，二，不考虑特点三"><a href="#满足特点一，二，不考虑特点三" class="headerlink" title="满足特点一，二，不考虑特点三"></a>满足特点一，二，不考虑特点三</h3><p>这种场景下任务启动时没有延时。但由于每个任务大小不一样轮询，哈希，随机就也就不再适应了。因为这几种算法适用于请求数量很大，任务大小差别不大的情况。也就是样本数足够大，样本基本一致才能保证这些样本均匀的分布在节点上。但也仅仅只是保证了每个节点上的样本数量均匀分布，倘若每个样本的所占用的资源不一样。那么这种均匀分配实际并不会使服务器的节点能够均匀的负载，达不到负载均衡的效果。那么这样的场景下，只平均负载的算法能够适用与这种场景。平均负载算法是在每次派发任务时，会收到节点反馈过来的负载情况，然后根据每个节点的负载情况，选择负载最小的节点派发任务。下面以图来说明这两种情况，如下图<br><img src="/2019/05/07/关于长连接的负载均衡解决方案/clj2.png"><br>从图上可知，有任务a,b,c分别对应三个摄像机。任务a是2M流量，任务b是4M流量，任务c是8M流量，假设每个节点配置都一样，满载时为100。很明显如果使用轮询节点c的负载肯定会大，这样实际上集群负载并不均衡。但如果使用平均负载，那么负载均衡器在派发任务时会根据节点的负载情况去分发任务，这样最终效果肯定是要比轮询好的</p>
+<h3 id="满足特点一，二，三"><a href="#满足特点一，二，三" class="headerlink" title="满足特点一，二，三"></a>满足特点一，二，三</h3><p>其实在前面两个特点下，我们忽略了一个重要问题。就是可信度问题，也就是特点三带来的问题。在分布式环境中，节点之间通信是不可靠。如果由于网络波动，或是业务场景导致负载均衡器在得到节点反馈过来的负载信息时，这个负载信息可能是存在几秒钟的延时。实际上得到的并不是当前的实时负载情况，而是几秒钟之前的负载情况。如下图：<br><img src="/2019/05/07/关于长连接的负载均衡解决方案/clj3.png"><br>这样会存在一个极大的隐患。假设有1000个请求过来了。根据平均负载的算法得到节点a的负载最低。那么请求理应分发到节点a上，但是由于反馈过来的负载信息是存在延时的，于是在两三秒内得到的结果都是节点a负载最低，那么这1000个请求可能会全部被分发到节点a上。这种现象被称为扎堆效应。这种情况的结果就是节点a扛不住压力宕机。那么由此可见平均负载算法也不适用了。</p>
+<h2 id="平均负载算法的改进-一"><a href="#平均负载算法的改进-一" class="headerlink" title="平均负载算法的改进(一)"></a>平均负载算法的改进(一)</h2><p>从上面几种场景可以看出，平均负载算法还是适用性是非常强的，而在第三种场景下如果能得到一个可信度较高的节点当前负载情况，那么就可以继续沿用平均负载算法。那么该如何得到可信的节点负载呢，由前面的分析可知得到的节点负载之所以不可信是因为存在延时，那么我们可以记录节点前三秒，或者是前五秒的每秒节点负载，在<br>把这些节点负载取平均值作为节点的当前负载。公式如下</p>
+<script type="math/tex; mode=display">m=(m4+m3+m2+m1+m0)/5</script><p>m表示当前负载 ，m4,m3,m2,m1,m0分别表示4,3,2,1,0秒前的负载，对于存在延时的系统，这样做法就能在一定程度上得到较为可靠节点的负载情况。但仍然不够准确，在实际生产环境中仍然会出现不均衡的情况，究其原因是因为对前5秒的数据取平均，但实际上，这样计算是不合理的，难道5秒以前的数据和1秒以前的数据对当前结果的影响还是一样的吗？显然不是，应该认为越靠近当前时间的负载值可信度就越高，越远离当前时间的负载值可信度就越低。这样才会越接近于实际。所以上面的公式应该是这样的</p>
+<script type="math/tex; mode=display">m= 0.36*m0+0.28*m1+0.20*m2+0.12*m3+0.04*m4</script><p>其中m0离当前时间最近，认为m0的可信度最高，所以给了36%的权重，而m4离当前时间最远，可信度最低，所以给了4%的权重。当然这里的权重应根据实际情况或经验设置值，根据这个公式算出的当前节点的负载值更能反应出节点的真实负载情况</p>
+<h2 id="平均负载算法的改进-二"><a href="#平均负载算法的改进-二" class="headerlink" title="平均负载算法的改进(二)"></a>平均负载算法的改进(二)</h2><p>上面两个公式是在得到几秒内的负载值然后计算出加权平均值确能在一定程度上反应节点的负载情况，但是这个种方法需要多次记录节点的负载信息，还比较麻烦。那有没有更好的方法呢，答案是有的，其实只需记录上一秒的节点负载情况，然后再获取当前节点负载，在这段时间段内对节点内，节点负载对时间取积分即可。这个方法是根据自动控制原理中的PID算法得到的那么上面节点负载的计算公式可得如下</p>
+<script type="math/tex; mode=display">
+m=m0+\frac{\int_0^t{(m0-m1)*t}\,{\rm d}t}{D}</script><p>公式中m表示计算得到的负载值，m0表示当前获取到的节点负载，m1表示上一秒获取到的节点负载，参数D是可信度系数，表示上一秒的节点负载值对当前负载值的影响程度，越大表示影响越小，这个值可根据实际情况设置。这样既只需要维护上一秒的节点负载值，减小了成本，又能得到相对准确的当前节点负载值。</p>
+<h2 id="负载均衡健康状态"><a href="#负载均衡健康状态" class="headerlink" title="负载均衡健康状态"></a>负载均衡健康状态</h2><p>负载均衡的健康状态如何定义呢？如果任务均匀的分布在各个节点上，就称集群的负载均衡状态是健康的，否则就是亚健康或者说是不健康的。在前面，我们衡量集群各个节点的负载情况时，总是以节点已经负载的量去评定的，例如集群有3个节点，每个节点的满载量为100，当前每个节点放负载为40，那么就可以认为集群达到了比较均匀的负载均衡状态。但这是理想状态，实际生活中，集群的节点配置是不可能完全相同的，有些节点可能是后加入的那配置可能会高一些，有些节点是之前用了好几年的，为了节省成本继续利用起来配置自然会点一些，所以集群各个节点是完全不一样的。如下图所示a,b,c三个节点，a节点放满载量为60，b节点的满载量为140，c节点的满载量为100，这样如继续以节点已负载的量去衡量的话，假设当前每个节点放负载仍为40，就会得到如下的情况</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>节点</th>
+<th>节点a</th>
+<th>节点b</th>
+<th>节点c</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>负载状态</td>
+<td>40/60</td>
+<td>40/140</td>
+<td>40/100</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>这样明显可以看出节点b还有很大的富余，因此通过节点当前的负载量，去判断集群的负载均衡状态是不科学的，这里可以换一种思路，以每个节点的剩余量作为衡量标准，这样上面那个例子中，节点a的富余是20，节点b的富余是100，节点c的富余是60，这样得到的就是如下的情况</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>节点</th>
+<th>节点a</th>
+<th>节点b</th>
+<th>节点c</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>富余量</td>
+<td>20</td>
+<td>100</td>
+<td>60</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>在负载均衡服务器派发任务时，不再是以节点负载最小的节点作为派发对象，而是以节点富余最大的节点作为派发对象，这样就能使节点的负载尽可能的均衡。这里衍生出一个公式可计算集群负载均衡的状态，首先计算出集群各个节点的负载富余的平均值</p>
+<script type="math/tex; mode=display">
+n=\frac{(n0+n1+n2)}3</script><p>然后求方差</p>
+<script type="math/tex; mode=display">
+y=(n0-n)^2+(n1-n)^2+(n2-n)^2</script><p>这样计算得到的方差结果，如果结果越小则说明集群负载越均衡，状态越健康，越大则说明越不均衡，集群的负载均衡处于一个相对不健康的状态</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/负载均衡/" rel="tag"># 负载均衡</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/04/04/ffmpeg-接收rtsp时的pts-dts设置/" rel="next" title="ffmpeg 接收rtsp时的pts dts设置">
+                <i class="fa fa-chevron-left"></i> ffmpeg 接收rtsp时的pts dts设置
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/06/14/java线程生命周期/" rel="prev" title="Java线程的生命周期">
+                Java线程的生命周期 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/jcodec.png" alt="las">
+            
+              <p class="site-author-name" itemprop="name">las</p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">25</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">32</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/las1991" title="GitHub &rarr; https://github.com/las1991" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:li_as1991@163.com" title="E-Mail &rarr; mailto:li_as1991@163.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://coolshell.cn/" title="https://coolshell.cn/" rel="noopener" target="_blank">haoel</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.etcunion.cn" title="https://www.etcunion.cn" rel="noopener" target="_blank">Zhangyh</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#长连接的特点"><span class="nav-number">1.</span> <span class="nav-text">长连接的特点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#满足特点一，不考虑特点二，三"><span class="nav-number">1.1.</span> <span class="nav-text">满足特点一，不考虑特点二，三</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#满足特点一，二，不考虑特点三"><span class="nav-number">1.2.</span> <span class="nav-text">满足特点一，二，不考虑特点三</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#满足特点一，二，三"><span class="nav-number">1.3.</span> <span class="nav-text">满足特点一，二，三</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#平均负载算法的改进-一"><span class="nav-number">2.</span> <span class="nav-text">平均负载算法的改进(一)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#平均负载算法的改进-二"><span class="nav-number">3.</span> <span class="nav-text">平均负载算法的改进(二)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#负载均衡健康状态"><span class="nav-number">4.</span> <span class="nav-text">负载均衡健康状态</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">京ICP备19046553号 </a>&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">las</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text"></span>
+    
+    <span title="站点总字数">50k</span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    
+      <span class="post-meta-item-text"></span>
+    
+    <span title="站点阅读时长">1:31</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+      
+    
+  
+  <script color="0,0,255" opacity="0.5" zindex="-1" count="150" src="//cdn.jsdelivr.net/gh/theme-next/theme-next-canvas-nest@1.0.0/canvas-nest.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+    
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+
+
+<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
+
+<script>
+  var gitalk = new Gitalk({
+    clientID: '2c559902e866509dafd4',
+    clientSecret: 'c44bf4b86ac35f2863f34fc382419136d5e89598',
+    repo: 'gitalk_comments',
+    owner: 'las1991',
+    admin: ['las1991'],
+    id: md5(location.pathname),
+    
+      language: window.navigator.language || window.navigator.userLanguage,
+    
+    distractionFreeMode: 'true'
+  });
+  gitalk.render('gitalk-container');
+</script>
+
+  
+
+
+  
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+  
+  <script>
+    
+    function addCount(Counter) {
+      var $visitors = $('.leancloud_visitors');
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+
+      Counter('get', '/classes/Counter', { where: JSON.stringify({ url }) })
+        .done(function({ results }) {
+          if (results.length > 0) {
+            var counter = results[0];
+            
+            Counter('put', '/classes/Counter/' + counter.objectId, JSON.stringify({ time: { '__op': 'Increment', 'amount': 1 } }))
+            
+              .done(function() {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.time + 1);
+              })
+            
+              .fail(function ({ responseJSON }) {
+                console.log('Failed to save Visitor num, with error message: ' + responseJSON.error);
+              })
+          } else {
+            
+              var $element = $(document.getElementById(url));
+              $element.find('.leancloud-visitors-count').text('Counter not initialized! More info at console err msg.');
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .fail(function ({ responseJSON }) {
+          console.log('LeanCloud Counter Error: ' + responseJSON.code + ' ' + responseJSON.error);
+        });
+    }
+    
+
+    $(function() {
+      $.get('https://app-router.leancloud.cn/2/route?appId=' + 'LbW9LOVIXKKgEcliJ9b6Cry0-gzGzoHsz')
+        .done(function({ api_server }) {
+          var Counter = function(method, url, data) {
+            return $.ajax({
+              method: method,
+              url: 'https://' + api_server + '/1.1' + url,
+              headers: {
+                'X-LC-Id': 'LbW9LOVIXKKgEcliJ9b6Cry0-gzGzoHsz',
+                'X-LC-Key': 'odiJqqgJg8DiGT0UA2LiU5Po',
+                'Content-Type': 'application/json',
+              },
+              data: data
+            });
+          };
+          
+            addCount(Counter);
+          
+        });
+    });
+  </script>
+
+
+
+  
+
+  
+  
+
+  
+  
+
+  
+    
+      <script type="text/x-mathjax-config">
+  
+
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$', '$'], ['\\(', '\\)'] ],
+      processEscapes: true,
+      skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    },
+    TeX: {
+      
+      equationNumbers: {
+        autoNumber: 'AMS'
+      }
+    }
+  });
+  MathJax.Hub.Register.StartupHook('TeX Jax Ready', function() {
+    MathJax.InputJax.TeX.prefilterHooks.Add(function(data) {
+      if (data.display) {
+        var next = data.script.nextSibling;
+        while (next && next.nodeName.toLowerCase() === '#text') { next = next.nextSibling }
+        if (next && next.nodeName.toLowerCase() === 'br') { next.parentNode.removeChild(next) }
+      }
+    });
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for (i = 0; i < all.length; i += 1) {
+      document.getElementById(all[i].inputID + '-Frame').parentNode.className += ' has-jax';
+    }
+  });
+</script>
+<script src="//cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script>
+    wpac_init = window.wpac_init || [];
+    wpac_init.push({
+      widget: 'Rating',
+      id: 19130,
+      el: 'wpac-rating',
+      color: 'fc6423'
+    });
+    (function() {
+      if ('WIDGETPACK_LOADED' in window) return;
+      WIDGETPACK_LOADED = true;
+      var mc = document.createElement('script');
+      mc.type = 'text/javascript';
+      mc.async = true;
+      mc.src = '//embed.widgetpack.com/widget.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+    })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

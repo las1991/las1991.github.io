@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+  <meta name="google-site-verification" content="fPEHdKiF0k_LN8ZQKKNoH9k8fP7oQYvy0EfJyY0PEFc">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/jcodec.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/jcodec.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/jcodec.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/jcodec.png?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="TCP Operational Overview and the TCP Finite State Machine (FSM) TCP 的那些事儿(上) TCP Finite State Machine (FSM) States, Events and Transitions      Table 151: TCP Finite State Machine (FSM) States,">
+<meta name="keywords" content="tcp,网络编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TCP Finite State Machine">
+<meta property="og:url" content="https://blog.f-fox.com/2019/08/25/TCP-Finite-State-Machine/index.html">
+<meta property="og:site_name" content="las1991">
+<meta property="og:description" content="TCP Operational Overview and the TCP Finite State Machine (FSM) TCP 的那些事儿(上) TCP Finite State Machine (FSM) States, Events and Transitions      Table 151: TCP Finite State Machine (FSM) States,">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://blog.f-fox.com/2019/08/25/TCP-Finite-State-Machine/tcpfsm.png">
+<meta property="og:image" content="https://blog.f-fox.com/2019/08/25/TCP-Finite-State-Machine/tcp_open_close.jpg">
+<meta property="og:image" content="https://blog.f-fox.com/2019/08/25/TCP-Finite-State-Machine/tcpclosesimul.png">
+<meta property="og:updated_time" content="2019-09-25T06:22:02.847Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TCP Finite State Machine">
+<meta name="twitter:description" content="TCP Operational Overview and the TCP Finite State Machine (FSM) TCP 的那些事儿(上) TCP Finite State Machine (FSM) States, Events and Transitions      Table 151: TCP Finite State Machine (FSM) States,">
+<meta name="twitter:image" content="https://blog.f-fox.com/2019/08/25/TCP-Finite-State-Machine/tcpfsm.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://blog.f-fox.com/2019/08/25/TCP-Finite-State-Machine/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>TCP Finite State Machine | las1991</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">las1991</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.f-fox.com/2019/08/25/TCP-Finite-State-Machine/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="las">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/jcodec.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="las1991">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">TCP Finite State Machine
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-08-25 10:38:00" itemprop="dateCreated datePublished" datetime="2019-08-25T10:38:00+08:00">2019-08-25</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-09-25 14:22:02" itemprop="dateModified" datetime="2019-09-25T14:22:02+08:00">2019-09-25</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+            <span id="/2019/08/25/TCP-Finite-State-Machine/" class="leancloud_visitors" data-flag-title="TCP Finite State Machine">
+              <span class="post-meta-divider">|</span>
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读次数：</span>
+              
+                <span class="leancloud-visitors-count"></span>
+            </span>
+          
+
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">本文字数：</span>
+                
+                <span title="本文字数">12k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">23 分钟</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><a href="http://www.tcpipguide.com/free/t_TCPOperationalOverviewandtheTCPFiniteStateMachineF-2.htm" target="_blank" rel="noopener">TCP Operational Overview and the TCP Finite State Machine (FSM) </a><br><a href="https://coolshell.cn/articles/11564.html" target="_blank" rel="noopener">TCP 的那些事儿(上)</a></p>
+<h1 id="TCP-Finite-State-Machine-FSM-States-Events-and-Transitions"><a href="#TCP-Finite-State-Machine-FSM-States-Events-and-Transitions" class="headerlink" title="TCP Finite State Machine (FSM) States, Events and Transitions"></a>TCP Finite State Machine (FSM) States, Events and Transitions</h1><img src="/2019/08/25/TCP-Finite-State-Machine/tcpfsm.png">
+<table border="3" cellpadding="4" cellspacing="2">
+    <caption align="top"><p align="center"><font face="Arial"><b>Table 151: TCP Finite State Machine (FSM) States,
+        Events and Transitions<br></b></font></p></caption>
+    <tbody>
+    <tr>
+        <td bgcolor="#CCCCFF"><p align="center"><font face="Arial"><b>State</b></font></p>
+        </td>
+        <td align="left" bgcolor="#CCCCFF"><p align="left"><font face="Arial"><b>State
+            Description</b></font></p>
+        </td>
+        <td align="left" bgcolor="#CCCCFF"><p align="left"><font face="Arial"><b>Event
+            and Transition</b></font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" rowspan="2"><p align="center"><font face="Arial"><b><i>CLOSED</i></b></font></p>
+        </td>
+        <td rowspan="2"><p align="left"><font face="Arial">This is the default
+            state that each connection starts in before the process of establishing
+            it begins. The state is called “fictional” in the standard.
+            The reason is that this state represents the situation where there is
+            no connection between devices—it either hasn't been created yet,
+            or has just been destroyed. If that makes sense. </font><font face="Wingdings">J</font></p>
+        </td>
+        <td><p align="left"><font face="Arial"><b>Passive Open:</b> A server
+            begins the process of connection setup by doing a passive open on a
+            TCP port. At the same time, it sets up the data structure (</font><a href="t_TCPConnectionPreparationTransmissionControlBlocksT.htm"><font face="Arial" color="#0101C0">transmission
+            control block or TCB</font></a><font face="Arial">) needed to manage
+            the connection. It then transitions to the <i>LISTEN</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial"><b>Active Open,
+            Send <i>SYN</i>:</b> A client begins connection setup by sending a <i>SYN</i>
+            message, and also sets up a TCB for this connection. It then transitions
+            to the <i>SYN-SENT</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center"><p align="center"><font face="Arial"><b><i>LISTEN</i></b></font></p>
+        </td>
+        <td><p align="left"><font face="Arial">A device (normally a server)
+            is waiting to receive a <i>synchronize</i> (<i>SYN</i>) message from
+            a client. It has not yet sent its own <i>SYN</i> message.</font></p>
+        </td>
+        <td><p align="left"><font face="Arial"><b>Receive Client <i>SYN</i>,
+            Send <i>SYN+ACK</i>:</b> The server device receives a <i>SYN</i> from
+            a client. It sends back a message that contains its own <i>SYN</i> and
+            also acknowledges the one it received. The server moves to the <i>SYN-RECEIVED</i>
+            state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" rowspan="2" bgcolor="#E1E1FF"><p align="center"><font face="Arial"><b><i>SYN-SENT</i></b></font></p>
+        </td>
+        <td rowspan="2" bgcolor="#E1E1FF"><p align="left"><font face="Arial">The
+            device (normally a client) has sent a <i>synchronize</i> (<i>SYN</i>)
+            message and is waiting for a matching <i>SYN</i> from the other device
+            (usually a server).</font></p>
+        </td>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial"><b>Receive
+            <i>SYN</i>, Send <i>ACK</i>:</b> If the device that has sent its <i>SYN</i>
+            message receives a <i>SYN</i> from the other device but not an <i>ACK</i>
+            for its own <i>SYN</i>, it acknowledges the <i>SYN</i> it receives and
+            then transitions to <i>SYN-RECEIVED</i> to wait for the acknowledgment
+            to its <i>SYN</i>.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td><p align="left"><font face="Arial"><b>Receive <i>SYN+ACK</i>, Send
+            <i>ACK</i>:</b> If the device that sent the <i>SYN</i> receives both
+            an acknowledgment to its <i>SYN</i> and also a <i>SYN</i> from the other
+            device, it acknowledges the <i>SYN</i> received and then moves straight
+            to the <i>ESTABLISHED</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" bgcolor="#E1E1FF"><p align="center"><font face="Arial"><b><i>SYN-RECEIVED</i></b></font></p>
+        </td>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial">The device
+            has both received a <i>SYN</i> (connection request) from its partner
+            and sent its own <i>SYN</i>. It is now waiting for an <i>ACK</i> to
+            its <i>SYN</i> to finish connection setup.</font></p>
+        </td>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial"><b>Receive
+            <i>ACK</i>:</b> When the device receives the <i>ACK</i> to the <i>SYN</i>
+            it sent, it transitions to the <i>ESTABLISHED</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" rowspan="2"><p align="center"><font face="Arial"><b><i>ESTABLISHED</i></b></font></p>
+        </td>
+        <td rowspan="2"><p align="left"><font face="Arial">The “steady
+            state” of an open TCP connection. Data can be exchanged freely
+            once both devices in the connection enter this state. This will continue
+            until the connection is closed for one reason or another.</font></p>
+        </td>
+        <td><p align="left"><font face="Arial"><b>Close, Send <i>FIN</i>:</b>
+            A device can close the connection by sending a message with the <i>FIN</i>
+            (<i>finish</i>) bit sent and transition to the <i>FIN-WAIT-1</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial"><b>Receive
+            <i>FIN</i>:</b> A device may receive a <i>FIN</i> message from its connection
+            partner asking that the connection be closed. It will acknowledge this
+            message and transition to the <i>CLOSE-WAIT</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center"><p align="center"><font face="Arial"><b><i>CLOSE-WAIT</i></b></font></p>
+        </td>
+        <td><p align="left"><font face="Arial">The device has received a close
+            request (<i>FIN</i>) from the other device. It must now wait for the
+            application on the local device to acknowledge this request and generate
+            a matching request.</font></p>
+        </td>
+        <td><p align="left"><font face="Arial"><b>Close, Send <i>FIN</i>:</b>
+            The application using TCP, having been informed the other process wants
+            to shut down, sends a close request to the TCP layer on the machine
+            upon which it is running. TCP then sends a <i>FIN</i> to the remote
+            device that already asked to terminate the connection. This device now
+            transitions to <i>LAST-ACK</i>.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" bgcolor="#E1E1FF"><p align="center"><font face="Arial"><b><i>LAST-ACK</i></b></font></p>
+        </td>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial">A device that
+            has already received a close request and acknowledged it, has sent its
+            own <i>FIN</i> and is waiting for an <i>ACK</i> to this request.</font></p>
+        </td>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial"><b>Receive
+            <i>ACK</i> for <i>FIN</i>:</b> The device receives an acknowledgment
+            for its close request. We have now sent our <i>FIN</i> and had it acknowledged,
+            and received the other device's <i>FIN</i> and acknowledged it, so we
+            go straight to the <i>CLOSED</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" rowspan="2"><p align="center"><font face="Arial"><b><i>FIN-WAIT-1</i></b></font></p>
+        </td>
+        <td rowspan="2"><p align="left"><font face="Arial">A device in this
+            state is waiting for an <i>ACK</i> for a <i>FIN</i> it has sent, or
+            is waiting for a connection termination request from the other device.
+        </font></p>
+        </td>
+        <td><p align="left"><font face="Arial"><b>Receive <i>ACK</i> for <i>FIN</i>:</b>
+            The device receives an acknowledgment for its close request. It transitions
+            to the <i>FIN-WAIT-2</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial"><b>Receive
+            <i>FIN</i>, Send <i>ACK</i>:</b> The device does not receive an <i>ACK</i>
+            for its own <i>FIN</i>, but receives a <i>FIN</i> from the other device.
+            It acknowledges it, and moves to the <i>CLOSING</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center"><p align="center"><font face="Arial"><b><i>FIN-WAIT-2</i></b></font></p>
+        </td>
+        <td><p align="left"><font face="Arial">A device in this state has received
+            an ACK for its request to terminate the connection and is now waiting
+            for a matching <i>FIN</i> from the other device.</font></p>
+        </td>
+        <td><p align="left"><font face="Arial"><b>Receive <i>FIN</i>, Send <i>ACK</i>:</b>
+            The device receives a <i>FIN</i> from the other device. It acknowledges
+            it and moves to the <i>TIME-WAIT</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" bgcolor="#E1E1FF"><p align="center"><font face="Arial"><b><i>CLOSING</i></b></font></p>
+        </td>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial">The device
+            has received a <i>FIN</i> from the other device and sent an <i>ACK</i>
+            for it, but not yet received an <i>ACK</i> for its own <i>FIN</i> message.</font></p>
+        </td>
+        <td bgcolor="#E1E1FF"><p align="left"><font face="Arial"><b>Receive
+            <i>ACK</i> for <i>FIN</i>:</b> The device receives an acknowledgment
+            for its close request. It transitions to the <i>TIME-WAIT</i> state.</font></p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center"><p align="center"><font face="Arial"><b><i>TIME-WAIT</i></b></font></p>
+        </td>
+        <td><p align="left"><font face="Arial">The device has now received a
+            <i>FIN</i> from the other device and acknowledged it, and sent its own
+            <i>FIN</i> and received an <i>ACK</i> for it. We are done, except for
+            waiting to ensure the ACK is received and prevent potential overlap
+            with new connections. (See </font><a href="t_TCPConnectionTermination.htm"><font face="Arial" color="#0101C0">the
+            topic describing connection termination</font></a><font face="Arial">
+            for more details on this state.)</font></p>
+        </td>
+        <td><p align="left"><font face="Arial"><b>Timer Expiration:</b> After
+            a designated wait period, device transitions to the <i>CLOSED</i> state.</font></p>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<h1 id="tcp-三次握手-四次挥手"><a href="#tcp-三次握手-四次挥手" class="headerlink" title="tcp 三次握手 四次挥手"></a>tcp 三次握手 四次挥手</h1><img src="/2019/08/25/TCP-Finite-State-Machine/tcp_open_close.jpg">
+<ul>
+<li>对于建链接的3次握手，主要是要初始化Sequence Number 的初始值。通信的双方要互相通知对方自己的初始化的Sequence Number（缩写为ISN：Inital Sequence Number）——所以叫SYN，全称Synchronize Sequence Numbers。也就上图中的 x 和 y。这个号要作为以后的数据通信的序号，以保证应用层接收到的数据不会因为网络上的传输的问题而乱序（TCP会用这个序号来拼接数据）。</li>
+<li>对于4次挥手，其实你仔细看是2次，因为TCP是全双工的，所以，发送方和接收方都需要Fin和Ack。只不过，有一方是被动的，所以看上去就成了所谓的4次挥手。如果两边同时断连接，那就会就进入到CLOSING状态，然后到达TIME_WAIT状态。下图是双方同时断连接的示意图（你同样可以对照着TCP状态机看）:</li>
+</ul>
+<img src="/2019/08/25/TCP-Finite-State-Machine/tcpclosesimul.png">
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/tcp/" rel="tag"># tcp</a>
+          
+            <a href="/tags/网络编程/" rel="tag"># 网络编程</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/08/24/Docker-Registry-Mirror/" rel="next" title="Docker Registry Mirror">
+                <i class="fa fa-chevron-left"></i> Docker Registry Mirror
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/09/03/java中判断字符串真实长度（中文2个字符，英文1个字符）的方法/" rel="prev" title="java中判断字符串真实长度（中文2个字符，英文1个字符）的方法">
+                java中判断字符串真实长度（中文2个字符，英文1个字符）的方法 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="gitalk-container">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/jcodec.png" alt="las">
+            
+              <p class="site-author-name" itemprop="name">las</p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">25</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">32</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/las1991" title="GitHub &rarr; https://github.com/las1991" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:li_as1991@163.com" title="E-Mail &rarr; mailto:li_as1991@163.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://coolshell.cn/" title="https://coolshell.cn/" rel="noopener" target="_blank">haoel</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.etcunion.cn" title="https://www.etcunion.cn" rel="noopener" target="_blank">Zhangyh</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#TCP-Finite-State-Machine-FSM-States-Events-and-Transitions"><span class="nav-number">1.</span> <span class="nav-text">TCP Finite State Machine (FSM) States, Events and Transitions</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#tcp-三次握手-四次挥手"><span class="nav-number">2.</span> <span class="nav-text">tcp 三次握手 四次挥手</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">京ICP备19046553号 </a>&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">las</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text"></span>
+    
+    <span title="站点总字数">50k</span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    
+      <span class="post-meta-item-text"></span>
+    
+    <span title="站点阅读时长">1:31</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+      
+    
+  
+  <script color="0,0,255" opacity="0.5" zindex="-1" count="150" src="//cdn.jsdelivr.net/gh/theme-next/theme-next-canvas-nest@1.0.0/canvas-nest.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+    
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+
+
+<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
+
+<script>
+  var gitalk = new Gitalk({
+    clientID: '2c559902e866509dafd4',
+    clientSecret: 'c44bf4b86ac35f2863f34fc382419136d5e89598',
+    repo: 'gitalk_comments',
+    owner: 'las1991',
+    admin: ['las1991'],
+    id: md5(location.pathname),
+    
+      language: window.navigator.language || window.navigator.userLanguage,
+    
+    distractionFreeMode: 'true'
+  });
+  gitalk.render('gitalk-container');
+</script>
+
+  
+
+
+  
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+  
+  <script>
+    
+    function addCount(Counter) {
+      var $visitors = $('.leancloud_visitors');
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+
+      Counter('get', '/classes/Counter', { where: JSON.stringify({ url }) })
+        .done(function({ results }) {
+          if (results.length > 0) {
+            var counter = results[0];
+            
+            Counter('put', '/classes/Counter/' + counter.objectId, JSON.stringify({ time: { '__op': 'Increment', 'amount': 1 } }))
+            
+              .done(function() {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.time + 1);
+              })
+            
+              .fail(function ({ responseJSON }) {
+                console.log('Failed to save Visitor num, with error message: ' + responseJSON.error);
+              })
+          } else {
+            
+              var $element = $(document.getElementById(url));
+              $element.find('.leancloud-visitors-count').text('Counter not initialized! More info at console err msg.');
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .fail(function ({ responseJSON }) {
+          console.log('LeanCloud Counter Error: ' + responseJSON.code + ' ' + responseJSON.error);
+        });
+    }
+    
+
+    $(function() {
+      $.get('https://app-router.leancloud.cn/2/route?appId=' + 'LbW9LOVIXKKgEcliJ9b6Cry0-gzGzoHsz')
+        .done(function({ api_server }) {
+          var Counter = function(method, url, data) {
+            return $.ajax({
+              method: method,
+              url: 'https://' + api_server + '/1.1' + url,
+              headers: {
+                'X-LC-Id': 'LbW9LOVIXKKgEcliJ9b6Cry0-gzGzoHsz',
+                'X-LC-Key': 'odiJqqgJg8DiGT0UA2LiU5Po',
+                'Content-Type': 'application/json',
+              },
+              data: data
+            });
+          };
+          
+            addCount(Counter);
+          
+        });
+    });
+  </script>
+
+
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script>
+    wpac_init = window.wpac_init || [];
+    wpac_init.push({
+      widget: 'Rating',
+      id: 19130,
+      el: 'wpac-rating',
+      color: 'fc6423'
+    });
+    (function() {
+      if ('WIDGETPACK_LOADED' in window) return;
+      WIDGETPACK_LOADED = true;
+      var mc = document.createElement('script');
+      mc.type = 'text/javascript';
+      mc.async = true;
+      mc.src = '//embed.widgetpack.com/widget.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+    })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
