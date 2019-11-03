@@ -100,13 +100,13 @@
 
 
 
-  <meta name="description" content="参考原文整理 ffmpeg-xcodeffmpeg xcode project build stepsstep 1 下载ffmpeg源码 FFmpeggit clone https://git.ffmpeg.org/ffmpeg.git FFmpeg  step 2 编译 ffmpeg cd FFmpeg ./configure --enable-debug=trace make -j8  问题1">
+  <meta name="description" content="参考原文整理 ffmpeg-xcodeffmpeg xcode project build stepsstep 1 下载ffmpeg源码 FFmpeggit clone https://git.ffmpeg.org/ffmpeg.git FFmpeg  step 2 编译 ffmpeg cd FFmpeg ./configure --enable-debug=trace | ./configure">
 <meta name="keywords" content="ffmpeg,xcode">
 <meta property="og:type" content="article">
 <meta property="og:title" content="使用Xcode断点调试ffmpeg">
 <meta property="og:url" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/index.html">
 <meta property="og:site_name" content="las1991">
-<meta property="og:description" content="参考原文整理 ffmpeg-xcodeffmpeg xcode project build stepsstep 1 下载ffmpeg源码 FFmpeggit clone https://git.ffmpeg.org/ffmpeg.git FFmpeg  step 2 编译 ffmpeg cd FFmpeg ./configure --enable-debug=trace make -j8  问题1">
+<meta property="og:description" content="参考原文整理 ffmpeg-xcodeffmpeg xcode project build stepsstep 1 下载ffmpeg源码 FFmpeggit clone https://git.ffmpeg.org/ffmpeg.git FFmpeg  step 2 编译 ffmpeg cd FFmpeg ./configure --enable-debug=trace | ./configure">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/1.png">
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/2.png">
@@ -115,15 +115,16 @@
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/5.png">
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/6.png">
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/7.png">
+<meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/7-1.png">
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/8.png">
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/9.png">
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/10.png">
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/11.png">
 <meta property="og:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/12.png">
-<meta property="og:updated_time" content="2019-09-25T06:22:02.905Z">
+<meta property="og:updated_time" content="2019-11-03T11:37:31.040Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="使用Xcode断点调试ffmpeg">
-<meta name="twitter:description" content="参考原文整理 ffmpeg-xcodeffmpeg xcode project build stepsstep 1 下载ffmpeg源码 FFmpeggit clone https://git.ffmpeg.org/ffmpeg.git FFmpeg  step 2 编译 ffmpeg cd FFmpeg ./configure --enable-debug=trace make -j8  问题1">
+<meta name="twitter:description" content="参考原文整理 ffmpeg-xcodeffmpeg xcode project build stepsstep 1 下载ffmpeg源码 FFmpeggit clone https://git.ffmpeg.org/ffmpeg.git FFmpeg  step 2 编译 ffmpeg cd FFmpeg ./configure --enable-debug=trace | ./configure">
 <meta name="twitter:image" content="https://blog.f-fox.com/2019/03/06/使用Xcode断点调试ffmpeg/1.png">
 
 
@@ -437,7 +438,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-25 14:22:02" itemprop="dateModified" datetime="2019-09-25T14:22:02+08:00">2019-09-25</time>
+                <time title="修改时间：2019-11-03 19:37:31" itemprop="dateModified" datetime="2019-11-03T19:37:31+08:00">2019-11-03</time>
               
             
           </span>
@@ -476,7 +477,7 @@
                 
                   <span class="post-meta-item-text">本文字数：</span>
                 
-                <span title="本文字数">4.5k</span>
+                <span title="本文字数">9k</span>
               
 
               
@@ -490,7 +491,7 @@
                 
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
-                <span title="阅读时长">8 分钟</span>
+                <span title="阅读时长">16 分钟</span>
               
             </div>
           
@@ -517,12 +518,22 @@
 </ul>
 <h3 id="step-2-编译-ffmpeg"><a href="#step-2-编译-ffmpeg" class="headerlink" title="step 2 编译 ffmpeg"></a>step 2 编译 ffmpeg</h3><ul>
 <li><code>cd FFmpeg</code></li>
-<li><code>./configure --enable-debug=trace</code></li>
+<li><code>./configure --enable-debug=trace</code> | <code>./configure --enable-debug</code> | <code>./configure --enable-debug=3</code></li>
 <li><code>make -j8</code></li>
 </ul>
-<h4 id="问题1"><a href="#问题1" class="headerlink" title="问题1"></a>问题1</h4><pre><code>编译时报错 yasm/nasm not found or too old. Use --disable-yasm for a crippled build. (yasm是汇编编译器, 因为ffmpeg中为了提高效率用到了汇编指令, 比如MMX和SSE)
-</code></pre><h4 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h4><pre><code> `brew install yasm`
-</code></pre><h3 id="step-3-新建一个空的-xcode-项目"><a href="#step-3-新建一个空的-xcode-项目" class="headerlink" title="step 3 新建一个空的 xcode 项目"></a>step 3 新建一个空的 xcode 项目</h3><ul>
+<blockquote>
+<p>make -j1  一个CPU编译</p>
+<p>make -j2  二个CPU编译</p>
+</blockquote>
+<h4 id="问题1"><a href="#问题1" class="headerlink" title="问题1"></a>问题1</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">编译时报错 yasm/nasm not found or too old. Use --disable-yasm for a crippled build. (yasm是汇编编译器, 因为ffmpeg中为了提高效率用到了汇编指令, 比如MMX和SSE)</span><br></pre></td></tr></table></figure>
+<h5 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install yasm</span><br></pre></td></tr></table></figure>
+<h4 id="问题2"><a href="#问题2" class="headerlink" title="问题2"></a>问题2</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"> ~/github/FFmpeg # make -j8</span><br><span class="line">CC	libavdevice/alldevices.o</span><br><span class="line">CC	libavdevice/avdevice.o</span><br><span class="line">CC	libavdevice/lavfi.o</span><br><span class="line">OBJCC	libavdevice/avfoundation.o</span><br><span class="line">CC	libavdevice/utils.o</span><br><span class="line">CC	libavfilter/aeval.o</span><br><span class="line">CC	libavfilter/af_acontrast.o</span><br><span class="line">CC	libavfilter/af_acopy.o</span><br><span class="line">clang: error: unknown argument: &apos;-gtrace&apos;</span><br><span class="line">clang: error: unknown argument: &apos;-gtrace&apos;</span><br><span class="line">clang: error: unknown argument: &apos;-gtrace&apos;clangclang:</span><br><span class="line">: errorerror: : unknown argument: &apos;-gtrace&apos;unknown argument: &apos;-gtrace&apos;</span><br><span class="line"></span><br><span class="line">clang: error: unknown argument: &apos;-gtrace&apos;</span><br><span class="line">clang: error: unknown argument: &apos;-gtrace&apos;</span><br><span class="line">make: *** [libavdevice/avfoundation.o] Error 1</span><br><span class="line">make: *** Waiting for unfinished jobs....</span><br><span class="line">make: *** [libavfilter/af_acontrast.o] Error 1</span><br><span class="line">make: *** [libavdevice/avdevice.o] Error 1</span><br><span class="line">make: *** [libavdevice/alldevices.o] Error 1</span><br><span class="line">make: *** [libavdevice/utils.o] Error 1</span><br><span class="line">make: *** [libavfilter/af_acopy.o] Error 1</span><br><span class="line">make: *** [libavfilter/aeval.o] Error 1</span><br><span class="line">clang: error: unknown argument: &apos;-gtrace&apos;</span><br><span class="line">make: *** [libavdevice/lavfi.o] Error 1</span><br></pre></td></tr></table></figure>
+<h5 id="解决方法-1"><a href="#解决方法-1" class="headerlink" title="解决方法"></a>解决方法</h5><p><code>./configure --enable-debug</code></p>
+<h4 id="问题4"><a href="#问题4" class="headerlink" title="问题4"></a>问题4</h4><p>Segfault on macOS 10.15 “Catalina”</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ffmpeg </span><br><span class="line">Segmentation fault: 11</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ./ffmpeg</span><br><span class="line">[1]    3439 segmentation fault  ./ffmpeg</span><br></pre></td></tr></table></figure>
+<h5 id="解决方法-2"><a href="#解决方法-2" class="headerlink" title="解决方法"></a>解决方法</h5><p><a href="https://trac.ffmpeg.org/ticket/8073#comment:description" target="_blank" rel="noopener">./configure —extra-cflags=”-fno-stack-check”</a></p>
+<h3 id="step-3-新建一个空的-xcode-项目"><a href="#step-3-新建一个空的-xcode-项目" class="headerlink" title="step 3 新建一个空的 xcode 项目"></a>step 3 新建一个空的 xcode 项目</h3><ul>
 <li>Create a new Xcode project</li>
 <li><p>新建一个空的 xcode 项目</p>
 <img src="/2019/03/06/使用Xcode断点调试ffmpeg/1.png" title="step3-1">
@@ -531,22 +542,23 @@
 <li><p>项目保存路径与<code>FFmpeg</code>同级.</p>
 </li>
 </ul>
-<h3 id="step-4-添加-FFmpeg-源码目录进-ffmpeg-debug2-项目中"><a href="#step-4-添加-FFmpeg-源码目录进-ffmpeg-debug2-项目中" class="headerlink" title="step 4 添加 FFmpeg 源码目录进 ffmpeg-debug2 项目中"></a>step 4 添加 <code>FFmpeg</code> 源码目录进 <code>ffmpeg-debug2</code> 项目中</h3><ul>
+<h3 id="step-4-添加-FFmpeg-源码目录进-ffmpeg-debug-项目中"><a href="#step-4-添加-FFmpeg-源码目录进-ffmpeg-debug-项目中" class="headerlink" title="step 4 添加 FFmpeg 源码目录进 ffmpeg-debug 项目中"></a>step 4 添加 <code>FFmpeg</code> 源码目录进 <code>ffmpeg-debug</code> 项目中</h3><ul>
 <li>1 选中FFmpeg目录</li>
 <li>2 拖到项目目录下</li>
 <li>3 不要勾选下面这个选项</li>
 </ul>
 <img src="/2019/03/06/使用Xcode断点调试ffmpeg/3.png" title="step3-2">
 <ul>
-<li>接着一点要选 <code>ffmpeg-debug2</code>, 否则看代码时, 不可以跳转. 写代码时不会有提示.<img src="/2019/03/06/使用Xcode断点调试ffmpeg/4.png" title="step3-3">
+<li>接着一点要选 <code>ffmpeg-debug</code>, 否则看代码时, 不可以跳转. 写代码时不会有提示.<img src="/2019/03/06/使用Xcode断点调试ffmpeg/4.png" title="step3-3">
 </li>
 </ul>
 <h3 id="step-5-添加头文件搜索路径"><a href="#step-5-添加头文件搜索路径" class="headerlink" title="step 5 添加头文件搜索路径"></a>step 5 添加头文件搜索路径</h3><ul>
 <li>到这里就可以实现头文件跳转了. 要等待处理完毕才可以点击头文件或者类来查看代码.</li>
-</ul>
+<li><p>Search Paths</p>
 <img src="/2019/03/06/使用Xcode断点调试ffmpeg/5.png" title="step5-1">
-<ul>
-<li>$(SRCROOT)/../FFmpeg</li>
+</li>
+<li><p>$(SRCROOT)/../FFmpeg</p>
+</li>
 </ul>
 <img src="/2019/03/06/使用Xcode断点调试ffmpeg/6.png" title="step5-2">
 <ul>
@@ -558,21 +570,28 @@
 <li>$(SRCROOT)/../FFmpeg/libswscal</li>
 <li>$(SRCROOT)/../FFmpeg/libpostproc</li>
 <li>$(SRCROOT)/../FFmpeg/libavresample</li>
-<li>$(SRCROOT)/../FFmpeg/libwresample</li>
+<li>$(SRCROOT)/../FFmpeg/libswscale</li>
 </ul>
 <h3 id="step-6-添加一个-target"><a href="#step-6-添加一个-target" class="headerlink" title="step 6 添加一个 target"></a>step 6 添加一个 target</h3><ul>
-<li><code>File -&gt; New -&gt; Target -&gt; OS X -&gt; Other -&gt; External Build System</code></li>
+<li><code>File -&gt; New -&gt; Target -&gt; Cross-platform -&gt; Other -&gt; External Build System</code></li>
 </ul>
 <img src="/2019/03/06/使用Xcode断点调试ffmpeg/7.png" title="step6-1">
 <ul>
 <li>target 命名为 <code>ffmpeg-make</code></li>
 </ul>
+<img src="/2019/03/06/使用Xcode断点调试ffmpeg/7-1.png" title="step6-2">
 <h3 id="step-7-修改-ffmpeg-make-源码路径配置"><a href="#step-7-修改-ffmpeg-make-源码路径配置" class="headerlink" title="step 7 修改 ffmpeg-make 源码路径配置"></a>step 7 修改 <code>ffmpeg-make</code> 源码路径配置</h3><ul>
-<li>修改 <code>ffmpeg-make</code> 源码路径<img src="/2019/03/06/使用Xcode断点调试ffmpeg/8.png" title="step7-1">
+<li>修改 <code>ffmpeg-make</code> 源码路径</li>
+<li><ul>
+<li>../FFmpeg</li>
+</ul>
 </li>
 </ul>
+<img src="/2019/03/06/使用Xcode断点调试ffmpeg/8.png" title="step7-1">
 <h3 id="step-8-修改-ffmpeg-make-命令行参数"><a href="#step-8-修改-ffmpeg-make-命令行参数" class="headerlink" title="step 8 修改 ffmpeg-make 命令行参数"></a>step 8 修改 <code>ffmpeg-make</code> 命令行参数</h3><ul>
-<li>配置命令行参数<br>在Xcode工具栏中选择你的target然后点击<code>Edit Scheme</code></li>
+<li><p>配置命令行参数</p>
+<p>在Xcode工具栏中选择你的target然后点击<code>Edit Scheme</code></p>
+</li>
 </ul>
 <img src="/2019/03/06/使用Xcode断点调试ffmpeg/9.png" title="step8-1">
 <ul>
@@ -583,7 +602,7 @@
 <img src="/2019/03/06/使用Xcode断点调试ffmpeg/11.png" title="step8-3">
 </li>
 </ul>
-<h3 id="step-9-大功告成-添加断点-ffplay-c-gt-main函数-点击-run"><a href="#step-9-大功告成-添加断点-ffplay-c-gt-main函数-点击-run" class="headerlink" title="step 9 大功告成 添加断点(ffplay.c-&gt;main函数), 点击 run"></a>step 9 大功告成 添加断点(ffplay.c-&gt;main函数), 点击 run</h3><img src="/2019/03/06/使用Xcode断点调试ffmpeg/12.png" title="step9-1">
+<h3 id="step-9-大功告成-添加断点-ffmpeg-c-gt-main函数-点击-run"><a href="#step-9-大功告成-添加断点-ffmpeg-c-gt-main函数-点击-run" class="headerlink" title="step 9 大功告成 添加断点(ffmpeg.c-&gt;main函数), 点击 run"></a>step 9 大功告成 添加断点(ffmpeg.c-&gt;main函数), 点击 run</h3><img src="/2019/03/06/使用Xcode断点调试ffmpeg/12.png" title="step9-1">
 
       
     </div>
@@ -886,7 +905,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ffmpeg-xcode"><span class="nav-number">1.</span> <span class="nav-text">ffmpeg-xcode</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#build-steps"><span class="nav-number">1.1.</span> <span class="nav-text">build steps</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#step-1-下载ffmpeg源码"><span class="nav-number">1.1.1.</span> <span class="nav-text">step 1 下载ffmpeg源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-2-编译-ffmpeg"><span class="nav-number">1.1.2.</span> <span class="nav-text">step 2 编译 ffmpeg</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#问题1"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">问题1</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#解决方法"><span class="nav-number">1.1.2.2.</span> <span class="nav-text">解决方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-3-新建一个空的-xcode-项目"><span class="nav-number">1.1.3.</span> <span class="nav-text">step 3 新建一个空的 xcode 项目</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-4-添加-FFmpeg-源码目录进-ffmpeg-debug2-项目中"><span class="nav-number">1.1.4.</span> <span class="nav-text">step 4 添加 FFmpeg 源码目录进 ffmpeg-debug2 项目中</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-5-添加头文件搜索路径"><span class="nav-number">1.1.5.</span> <span class="nav-text">step 5 添加头文件搜索路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-6-添加一个-target"><span class="nav-number">1.1.6.</span> <span class="nav-text">step 6 添加一个 target</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-7-修改-ffmpeg-make-源码路径配置"><span class="nav-number">1.1.7.</span> <span class="nav-text">step 7 修改 ffmpeg-make 源码路径配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-8-修改-ffmpeg-make-命令行参数"><span class="nav-number">1.1.8.</span> <span class="nav-text">step 8 修改 ffmpeg-make 命令行参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-9-大功告成-添加断点-ffplay-c-gt-main函数-点击-run"><span class="nav-number">1.1.9.</span> <span class="nav-text">step 9 大功告成 添加断点(ffplay.c-&gt;main函数), 点击 run</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ffmpeg-xcode"><span class="nav-number">1.</span> <span class="nav-text">ffmpeg-xcode</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#build-steps"><span class="nav-number">1.1.</span> <span class="nav-text">build steps</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#step-1-下载ffmpeg源码"><span class="nav-number">1.1.1.</span> <span class="nav-text">step 1 下载ffmpeg源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-2-编译-ffmpeg"><span class="nav-number">1.1.2.</span> <span class="nav-text">step 2 编译 ffmpeg</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#问题1"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">问题1</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#解决方法"><span class="nav-number">1.1.2.1.1.</span> <span class="nav-text">解决方法</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#问题2"><span class="nav-number">1.1.2.2.</span> <span class="nav-text">问题2</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#解决方法-1"><span class="nav-number">1.1.2.2.1.</span> <span class="nav-text">解决方法</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#问题4"><span class="nav-number">1.1.2.3.</span> <span class="nav-text">问题4</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#解决方法-2"><span class="nav-number">1.1.2.3.1.</span> <span class="nav-text">解决方法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-3-新建一个空的-xcode-项目"><span class="nav-number">1.1.3.</span> <span class="nav-text">step 3 新建一个空的 xcode 项目</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-4-添加-FFmpeg-源码目录进-ffmpeg-debug-项目中"><span class="nav-number">1.1.4.</span> <span class="nav-text">step 4 添加 FFmpeg 源码目录进 ffmpeg-debug 项目中</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-5-添加头文件搜索路径"><span class="nav-number">1.1.5.</span> <span class="nav-text">step 5 添加头文件搜索路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-6-添加一个-target"><span class="nav-number">1.1.6.</span> <span class="nav-text">step 6 添加一个 target</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-7-修改-ffmpeg-make-源码路径配置"><span class="nav-number">1.1.7.</span> <span class="nav-text">step 7 修改 ffmpeg-make 源码路径配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-8-修改-ffmpeg-make-命令行参数"><span class="nav-number">1.1.8.</span> <span class="nav-text">step 8 修改 ffmpeg-make 命令行参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#step-9-大功告成-添加断点-ffmpeg-c-gt-main函数-点击-run"><span class="nav-number">1.1.9.</span> <span class="nav-text">step 9 大功告成 添加断点(ffmpeg.c-&gt;main函数), 点击 run</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
@@ -921,7 +940,7 @@
     
       <span class="post-meta-item-text"></span>
     
-    <span title="站点总字数">53k</span>
+    <span title="站点总字数">55k</span>
   
 
   
@@ -932,7 +951,7 @@
     
       <span class="post-meta-item-text"></span>
     
-    <span title="站点阅读时长">1:37</span>
+    <span title="站点阅读时长">1:39</span>
   
 </div>
 
