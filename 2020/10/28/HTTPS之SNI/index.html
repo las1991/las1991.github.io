@@ -108,10 +108,12 @@
 <meta property="og:site_name" content="las1991">
 <meta property="og:description" content="SNISNI（Server Name Indication）是 TLS 的扩展，用来解决一个服务器拥有多个域名的情况。 在客户端和服务端建立 HTTPS 的过程中要先进行 TLS 握手，握手后会将 HTTP 报文使用协商好的密钥加密传输。 在 TLS 握手信息中并没有携带客户端要访问的目标地址。这样会导致一个问题，如果一台服务器有多个虚拟主机，且每个主机的域名不一样，使用了不一样的证书，该和哪台虚">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2020-10-28T08:38:05.977Z">
+<meta property="og:image" content="https://blog.f-fox.com/2020/10/28/HTTPS之SNI/HTTPS-SNI抓包.jpeg">
+<meta property="og:updated_time" content="2020-10-28T08:43:30.859Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="HTTPS之SNI">
 <meta name="twitter:description" content="SNISNI（Server Name Indication）是 TLS 的扩展，用来解决一个服务器拥有多个域名的情况。 在客户端和服务端建立 HTTPS 的过程中要先进行 TLS 握手，握手后会将 HTTP 报文使用协商好的密钥加密传输。 在 TLS 握手信息中并没有携带客户端要访问的目标地址。这样会导致一个问题，如果一台服务器有多个虚拟主机，且每个主机的域名不一样，使用了不一样的证书，该和哪台虚">
+<meta name="twitter:image" content="https://blog.f-fox.com/2020/10/28/HTTPS之SNI/HTTPS-SNI抓包.jpeg">
 
 
 
@@ -407,7 +409,7 @@
                 
               
 
-              <time title="创建时间：2020-10-28 16:08:19 / 修改时间：16:38:05" itemprop="dateCreated datePublished" datetime="2020-10-28T16:08:19+08:00">2020-10-28</time>
+              <time title="创建时间：2020-10-28 16:08:19 / 修改时间：16:43:30" itemprop="dateCreated datePublished" datetime="2020-10-28T16:08:19+08:00">2020-10-28</time>
             
 
             
@@ -451,7 +453,7 @@
                 
                   <span class="post-meta-item-text">本文字数：</span>
                 
-                <span title="本文字数">2.2k</span>
+                <span title="本文字数">2.3k</span>
               
 
               
@@ -490,6 +492,8 @@
 <p>在 TLS 握手信息中并没有携带客户端要访问的目标地址。这样会导致一个问题，如果一台服务器有多个虚拟主机，且每个主机的域名不一样，使用了不一样的证书，该和哪台虚拟主机进行通信？</p>
 <p>和 HTTP 协议用来解决服务器多域名的方案类似，HTTP 在请求头中使用 Host 字段来指定要访问的域名。TLS 的做法，也是加 Host，在 TLS 握手第一阶段 ClientHello 的报文中添加。</p>
 <p>SNI 在 TLSv1.2 开始得到支持。从 OpenSSL 0.9.8 版本开始支持。所以基本市场上的终端设备都支持。</p>
+<p>使用 WireShark 抓包看一下 ClientHello：</p>
+<img src="/2020/10/28/HTTPS之SNI/HTTPS-SNI抓包.jpeg">
 <p>可以看到包中的 SNI 扩展字段：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Extension: server_name</span><br><span class="line">       Type: server_name (0x0000)</span><br><span class="line">       Length: 19</span><br><span class="line">       Server Name Indication extension</span><br><span class="line">           Server Name list length: 17</span><br><span class="line">           Server Name Type: host_name (0)</span><br><span class="line">           Server Name length: 14</span><br><span class="line">           Server Name: www.github.com</span><br></pre></td></tr></table></figure></p>
 <p>这里指定了该 TLS 握手的目标域名为 www.github.com 。<br>通过 SNI，拥有多虚拟机主机和多域名的服务器就可以正常建立 TLS 连接了。</p>
 <h2 id="nginx支持TLS协议的SNI扩展"><a href="#nginx支持TLS协议的SNI扩展" class="headerlink" title="nginx支持TLS协议的SNI扩展"></a>nginx支持TLS协议的SNI扩展</h2><p><a href="http://nginx.org/en/docs/http/configuring_https_servers.html#Server%20Name%20Indication" target="_blank" rel="noopener">nginx手册</a></p>
@@ -558,6 +562,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/11/04/Mysql-优化3板斧/" rel="prev" title="Mysql 优化3板斧">
+                Mysql 优化3板斧 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -632,7 +640,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">34</span>
+                    <span class="site-state-item-count">39</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>
@@ -729,7 +737,19 @@
                     
                       
                     
-                    <span class="site-state-item-count">39</span>
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">45</span>
                     <span class="site-state-item-name">标签</span>
                   </a>
                 </div>
@@ -832,7 +852,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">京ICP备19046553号 </a>&copy; <span itemprop="copyrightYear">2020</span>
+        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">京ICP备19046553号 </a>&copy; <span itemprop="copyrightYear">2021</span>
   <span class="with-love" id="animate">
     <i class="fa fa-user"></i>
   </span>
@@ -846,7 +866,7 @@
     
       <span class="post-meta-item-text"></span>
     
-    <span title="站点总字数">67k</span>
+    <span title="站点总字数">81k</span>
   
 
   
@@ -857,7 +877,7 @@
     
       <span class="post-meta-item-text"></span>
     
-    <span title="站点阅读时长">2:02</span>
+    <span title="站点阅读时长">2:27</span>
   
 </div>
 
